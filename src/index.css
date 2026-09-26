@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: #faf6ee;
+}
+
+/* ── Receipt: hidden on screen, only shown when printing ────────────────── */
+#receipt-print {
+  display: none;
+  visibility: hidden;
+}
+
+/* ── Thermal receipt print styles ───────────────────────────────────────── */
+@media print {
+  /* 80 mm roll paper — no margins, no browser headers/footers */
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  /* Hide everything that isn't the receipt */
+  body > *:not(#receipt-print) {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body {
+    background: #fff !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Show the receipt — it is a direct child of body via React portal */
+  #receipt-print {
+    display: block !important;
+    visibility: visible !important;
+    width: 72mm;
+    margin: 0 auto;
+    padding: 4mm 0 6mm;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #000 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── Header ── */
+  .receipt-header {
+    text-align: center;
+    margin-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  .receipt-logo {
+    height: 36px;
+    object-fit: contain;
+    margin-bottom: 3px;
+  }
+  .receipt-header .shop-name {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── Dividers ── */
+  .receipt-divider {
+    border: none;
+    border-top: 1px dashed #000;
+    margin: 4px 0;
+  }
+  .receipt-divider--solid {
+    border-top-style: solid;
+    border-top-width: 2px;
+  }
+
+  /* ── Key-value rows ── */
+  .receipt-meta {
+    margin-bottom: 2px;
+  }
+  .receipt-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+  }
+  .receipt-row span:last-child {
+    text-align: right;
+    word-break: break-word;
+  }
+
+  /* ── Items table ── */
+  .receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .receipt-table th {
+    font-weight: 700;
+    border-bottom: 1px solid #000;
+    padding: 1px 0;
+  }
+  .receipt-table td,
+  .receipt-table th {
+    vertical-align: top;
+    padding: 1px 0;
+  }
+  .col-item  { width: 40%; }
+  .col-qty   { width: 10%; text-align: center; }
+  .col-price { width: 22%; text-align: right; }
+  .col-amt   { width: 28%; text-align: right; }
+
+  /* ── Totals ── */
+  .receipt-totals {
+    margin: 2px 0;
+  }
+  .receipt-grand-total {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 2px 0 4px;
+  }
+
+  /* ── Footer ── */
+  .receipt-footer {
+    text-align: center;
+    margin-top: 6px;
+    font-size: 10px;
+  }
+}
