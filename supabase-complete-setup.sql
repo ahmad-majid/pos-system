@@ -1,10 +1,172 @@
 -- ============================================================
--- Run this in Supabase Dashboard → SQL Editor → New query
--- These functions are called via supabase.rpc() from the frontend
+-- GHAR JAISA POS - COMPLETE SUPABASE SETUP SCRIPT
+-- Paste and run this in: Supabase Dashboard → SQL Editor → New query
+-- Safe to run multiple times (uses CREATE TABLE IF NOT EXISTS / OR REPLACE)
 -- ============================================================
 
--- ── 1. Create order (transactional) ─────────────────────────────────────────
--- Handles: customer upsert, safe collision-free order_no generation, order + items insert
+-- ── 1. TABLES SETUP ──────────────────────────────────────────
+
+-- Categories
+create table if not exists categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  created_at timestamptz default now()
+);
+
+-- Products
+create table if not exists products (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  category_id uuid references categories(id) on delete set null,
+  price numeric not null default 0,
+  description text,
+  image_url text,
+  status text not null default 'active',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Customers
+create table if not exists customers (
+  id uuid primary key default gen_random_uuid(),
+  name text,
+  phone text,
+  address text,
+  created_at timestamptz default now()
+);
+
+-- Orders
+create table if not exists orders (
+  id uuid primary key default gen_random_uuid(),
+  order_no text not null unique,
+  customer_id uuid references customers(id) on delete set null,
+  customer_name text,
+  customer_phone text,
+  customer_address text,
+  order_type text default 'stall',
+  payment_method text default 'cash',
+  subtotal numeric not null default 0,
+  delivery_charges numeric not null default 0,
+  grand_total numeric not null default 0,
+  status text not null default 'pending',
+  created_at timestamptz default now()
+);
+
+-- Order Items
+create table if not exists order_items (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references orders(id) on delete cascade,
+  product_id uuid references products(id) on delete set null,
+  product_name text not null,
+  unit_price numeric not null default 0,
+  quantity int not null default 1,
+  total numeric not null default 0,
+  created_at timestamptz default now()
+);
+
+-- Store Settings
+create table if not exists settings (
+  id int primary key default 1,
+  shop_name text default 'Ghar Jaisa',
+  tagline text default 'Made with love, just like home',
+  address text,
+  phone text,
+  default_delivery_charge numeric default 300,
+  receipt_footer text default 'Thank you! Good Food, Happy People ♥',
+  logo_url text,
+  updated_at timestamptz default now()
+);
+
+-- Seed default settings row if missing
+insert into settings (id, shop_name, tagline, default_delivery_charge, receipt_footer)
+values (1, 'Ghar Jaisa', 'Made with love, just like home', 300, 'Thank you! Good Food, Happy People ♥')
+on conflict (id) do nothing;
+
+-- ── 2. STORAGE SETUP (FOR LOGOS) ─────────────────────────────
+insert into storage.buckets (id, name, public)
+values ('logos', 'logos', true)
+on conflict (id) do nothing;
+
+-- Storage policies
+drop policy if exists "anon_upload_logos" on storage.objects;
+drop policy if exists "anon_read_logos" on storage.objects;
+drop policy if exists "anon_delete_logos" on storage.objects;
+
+create policy "anon_upload_logos" on storage.objects for insert with check (bucket_id = 'logos');
+create policy "anon_read_logos" on storage.objects for select using (bucket_id = 'logos');
+create policy "anon_delete_logos" on storage.objects for delete using (bucket_id = 'logos');
+
+-- ── 3. ROW LEVEL SECURITY (RLS) POLICIES ─────────────────────
+alter table categories enable row level security;
+alter table products enable row level security;
+alter table customers enable row level security;
+alter table orders enable row level security;
+alter table order_items enable row level security;
+alter table settings enable row level security;
+
+-- categories
+drop policy if exists "anon_select_categories" on categories;
+drop policy if exists "anon_insert_categories" on categories;
+drop policy if exists "anon_update_categories" on categories;
+drop policy if exists "anon_delete_categories" on categories;
+create policy "anon_select_categories" on categories for select using (true);
+create policy "anon_insert_categories" on categories for insert with check (true);
+create policy "anon_update_categories" on categories for update using (true);
+create policy "anon_delete_categories" on categories for delete using (true);
+
+-- products
+drop policy if exists "anon_select_products" on products;
+drop policy if exists "anon_insert_products" on products;
+drop policy if exists "anon_update_products" on products;
+drop policy if exists "anon_delete_products" on products;
+create policy "anon_select_products" on products for select using (true);
+create policy "anon_insert_products" on products for insert with check (true);
+create policy "anon_update_products" on products for update using (true);
+create policy "anon_delete_products" on products for delete using (true);
+
+-- customers
+drop policy if exists "anon_select_customers" on customers;
+drop policy if exists "anon_insert_customers" on customers;
+drop policy if exists "anon_update_customers" on customers;
+drop policy if exists "anon_delete_customers" on customers;
+create policy "anon_select_customers" on customers for select using (true);
+create policy "anon_insert_customers" on customers for insert with check (true);
+create policy "anon_update_customers" on customers for update using (true);
+create policy "anon_delete_customers" on customers for delete using (true);
+
+-- orders
+drop policy if exists "anon_select_orders" on orders;
+drop policy if exists "anon_insert_orders" on orders;
+drop policy if exists "anon_update_orders" on orders;
+drop policy if exists "anon_delete_orders" on orders;
+create policy "anon_select_orders" on orders for select using (true);
+create policy "anon_insert_orders" on orders for insert with check (true);
+create policy "anon_update_orders" on orders for update using (true);
+create policy "anon_delete_orders" on orders for delete using (true);
+
+-- order_items
+drop policy if exists "anon_select_order_items" on order_items;
+drop policy if exists "anon_insert_order_items" on order_items;
+drop policy if exists "anon_update_order_items" on order_items;
+drop policy if exists "anon_delete_order_items" on order_items;
+create policy "anon_select_order_items" on order_items for select using (true);
+create policy "anon_insert_order_items" on order_items for insert with check (true);
+create policy "anon_update_order_items" on order_items for update using (true);
+create policy "anon_delete_order_items" on order_items for delete using (true);
+
+-- settings
+drop policy if exists "anon_select_settings" on settings;
+drop policy if exists "anon_insert_settings" on settings;
+drop policy if exists "anon_update_settings" on settings;
+drop policy if exists "anon_delete_settings" on settings;
+create policy "anon_select_settings" on settings for select using (true);
+create policy "anon_insert_settings" on settings for insert with check (true);
+create policy "anon_update_settings" on settings for update using (true);
+create policy "anon_delete_settings" on settings for delete using (true);
+
+-- ── 4. RPC FUNCTIONS (WITH PAKISTAN TIMEZONE & SAFE SEQUENCE) ──
+
+-- Create order (transactional, safe sequence)
 create or replace function create_order(
   p_customer_name    text    default null,
   p_customer_phone   text    default null,
@@ -50,8 +212,7 @@ begin
       returning id into v_customer_id;
   end if;
 
-  -- 2. Generate order_no (GJ-YYYYMMDD-NNN) using Pakistan Standard Time (UTC+5)
-  -- Uses coalesce(max(sequence), 0) + 1 to prevent collisions if orders are deleted or high concurrency
+  -- 2. Generate order_no (GJ-YYYYMMDD-NNN) using PKT (UTC+5)
   v_ymd := to_char(timezone('Asia/Karachi', now()), 'YYYYMMDD');
   select coalesce(max(nullif(split_part(order_no, '-', 3), '')::int), 0) + 1
     into v_seq
@@ -96,7 +257,7 @@ begin
 end;
 $$;
 
--- ── 2. Order stats (dashboard cards) ────────────────────────────────────────
+-- Order stats
 create or replace function get_order_stats()
 returns jsonb
 language sql
@@ -112,7 +273,7 @@ as $$
   from orders;
 $$;
 
--- ── 3. Reports summary ───────────────────────────────────────────────────────
+-- Reports summary
 create or replace function get_reports_summary()
 returns jsonb
 language sql
@@ -129,7 +290,7 @@ as $$
   from orders where status != 'cancelled';
 $$;
 
--- ── 4. Daily sales for chart ─────────────────────────────────────────────────
+-- Daily sales
 create or replace function get_daily_sales(p_days int default 14)
 returns table(date date, revenue numeric, orders int)
 language sql
@@ -145,7 +306,7 @@ as $$
   order by d;
 $$;
 
--- ── 5. Top products ──────────────────────────────────────────────────────────
+-- Top products
 create or replace function get_top_products(p_days int default 30, p_limit int default 5)
 returns table(product_name text, units_sold int, revenue numeric)
 language sql
@@ -164,7 +325,7 @@ as $$
   limit p_limit;
 $$;
 
--- ── 6. Customer list with aggregates ─────────────────────────────────────────
+-- Customers with aggregates
 create or replace function get_customers(p_search text default '')
 returns table(
   id uuid, name text, phone text, address text, created_at timestamptz,
@@ -187,7 +348,7 @@ as $$
   order by max(o.created_at) desc nulls last;
 $$;
 
--- ── 7. Categories with product counts ────────────────────────────────────────
+-- Categories with counts
 create or replace function get_categories_with_counts()
 returns table(id uuid, name text, created_at timestamptz, product_count int)
 language sql
@@ -200,7 +361,7 @@ as $$
   order by c.name;
 $$;
 
--- ── 8. Products with category name ───────────────────────────────────────────
+-- Products with category name
 create or replace function get_products(p_search text default '', p_category text default '', p_status text default '')
 returns table(
   id uuid, name text, category_id uuid, category_name text,
@@ -219,7 +380,7 @@ as $$
   order by p.created_at desc;
 $$;
 
--- ── 9. Delete customer (nullify orders first) ────────────────────────────────
+-- Delete customer safely
 create or replace function delete_customer(p_id uuid)
 returns void
 language plpgsql

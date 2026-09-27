@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom";
 
 // Renders into document.body via a portal so it sits as a direct child of <body>.
-// No fallback defaults — whatever is saved in settings is what prints.
+// Print-optimized for 80mm thermal roll paper.
 export default function ReceiptPrint({ order, shop, logoUrl }) {
   if (!order) return null;
 
@@ -30,8 +30,9 @@ export default function ReceiptPrint({ order, shop, logoUrl }) {
             hour: "2-digit", minute: "2-digit"
           })}</span>
         </div>
-        {order.customer_name  && <div className="receipt-row"><span>Customer</span><span>{order.customer_name}</span></div>}
-        {order.customer_phone && <div className="receipt-row"><span>Phone</span><span>{order.customer_phone}</span></div>}
+        {order.customer_name    && <div className="receipt-row"><span>Customer</span><span>{order.customer_name}</span></div>}
+        {order.customer_phone   && <div className="receipt-row"><span>Phone</span><span>{order.customer_phone}</span></div>}
+        {order.customer_address && <div className="receipt-row"><span>Address</span><span>{order.customer_address}</span></div>}
         <div className="receipt-row"><span>Type</span><span style={{textTransform:"capitalize"}}>{order.order_type}</span></div>
         <div className="receipt-row"><span>Payment</span><span style={{textTransform:"capitalize"}}>{order.payment_method}</span></div>
       </div>
@@ -68,12 +69,35 @@ export default function ReceiptPrint({ order, shop, logoUrl }) {
         {Number(order.delivery_charges) > 0 && (
           <div className="receipt-row"><span>Delivery</span><span>Rs. {fmt(order.delivery_charges)}</span></div>
         )}
+        {Number(order.discount) > 0 && (
+          <div className="receipt-row"><span>Discount</span><span>-Rs. {fmt(order.discount)}</span></div>
+        )}
       </div>
       <div className="receipt-divider receipt-divider--solid" />
       <div className="receipt-row receipt-grand-total">
         <span>TOTAL</span>
         <span>Rs. {fmt(order.grand_total)}</span>
       </div>
+
+      {/* ── Cash change details ── */}
+      {order.cash_tendered > 0 && (
+        <div className="receipt-totals" style={{ marginTop: 2 }}>
+          <div className="receipt-row"><span>Cash Paid</span><span>Rs. {fmt(order.cash_tendered)}</span></div>
+          {order.change_due >= 0 && (
+            <div className="receipt-row"><span>Change Due</span><span>Rs. {fmt(order.change_due)}</span></div>
+          )}
+        </div>
+      )}
+
+      {/* ── Kitchen / Order Notes ── */}
+      {order.notes && (
+        <>
+          <div className="receipt-divider" />
+          <div style={{ fontSize: "10px", fontStyle: "italic", textAlign: "left" }}>
+            <strong>Note:</strong> {order.notes}
+          </div>
+        </>
+      )}
 
       {/* ── Footer ── */}
       {shop?.receipt_footer && (

@@ -1,70 +1,168 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { PlusCircle, DollarSign, ShoppingCart, Clock, ArrowRight, TrendingUp } from "lucide-react";
 import { getOrderStats, getOrders } from "../lib/orders.js";
 
+const statusStyle = {
+  pending:   "bg-yellow-100 text-yellow-800",
+  preparing: "bg-blue-100 text-blue-800",
+  completed: "bg-emerald-100 text-emerald-800",
+  cancelled: "bg-rose-100 text-rose-800",
+};
+
 export default function Dashboard() {
-  const [stats, setStats]   = useState(null);
-  const [orders, setOrders] = useState([]);
+  const [stats, setStats]     = useState(null);
+  const [orders, setOrders]   = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getOrderStats().then(setStats).catch(console.error);
-    getOrders({ limit: 6 }).then(setOrders).catch(console.error);
+    Promise.all([
+      getOrderStats().then(setStats),
+      getOrders({ limit: 6 }).then(setOrders),
+    ])
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div>
-      <h1 className="font-serif text-3xl mb-1">Welcome to Ghar Jaisa ♥</h1>
-      <p className="text-neutral-500 mb-6">Made with love, just like home</p>
-
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <Link to="/new-order" className="bg-ink text-white rounded-xl p-5 flex items-center gap-3">
-          <Plus className="bg-gold/20 rounded-full p-2" size={36} />
-          <div>
-            <div className="font-medium">New Order</div>
-            <div className="text-xs text-white/60">Create a new customer order</div>
-          </div>
-        </Link>
-        <StatCard label="Today's Sales"   value={`Rs. ${Number(stats?.today_sales   || 0).toLocaleString()}`} />
-        <StatCard label="Total Orders"    value={stats?.total_orders    ?? "—"} />
-        <StatCard label="Pending Orders"  value={stats?.pending_orders  ?? "—"} />
+    <div className="space-y-6">
+      {/* Welcome Header */}
+      <div>
+        <h1 className="font-serif text-2xl sm:text-3xl text-neutral-900 tracking-tight">
+          Welcome to Ghar Jaisa ♥
+        </h1>
+        <p className="text-neutral-500 text-xs sm:text-sm mt-0.5">
+          Real-time daily sales, order progress, and kitchen status
+        </p>
       </div>
 
-      <div className="bg-white rounded-xl p-5">
-        <h2 className="font-semibold mb-4">Recent Orders</h2>
-        <table className="w-full text-sm">
-          <thead className="text-left text-neutral-400 border-b">
-            <tr>
-              <th className="py-2">#</th>
-              <th>Customer</th>
-              <th>Total</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((o) => (
-              <tr key={o.id} className="border-b last:border-0">
-                <td className="py-2">{o.order_no}</td>
-                <td>{o.customer_name || "Walk-in"}</td>
-                <td>Rs. {Number(o.grand_total).toLocaleString()}</td>
-                <td className="capitalize">{o.status}</td>
+      {/* Responsive Stat Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Quick New Order Action */}
+        <Link
+          to="/new-order"
+          className="bg-ink hover:bg-neutral-900 text-gold rounded-2xl p-5 flex items-center justify-between shadow-sm group active:scale-[0.99] transition border border-gold/20"
+        >
+          <div className="space-y-1">
+            <div className="font-serif font-bold text-lg text-gold">Create Order</div>
+            <div className="text-xs text-gold/70">New customer counter checkout</div>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center text-gold group-hover:scale-110 transition">
+            <PlusCircle size={22} />
+          </div>
+        </Link>
+
+        {/* Today's Sales */}
+        <StatCard
+          icon={TrendingUp}
+          label="Today's Sales"
+          value={`Rs. ${Number(stats?.today_sales || 0).toLocaleString()}`}
+          subtext={`${stats?.today_orders || 0} orders today`}
+          highlight
+        />
+
+        {/* Total Orders */}
+        <StatCard
+          icon={ShoppingCart}
+          label="Total Orders"
+          value={stats?.total_orders ?? (loading ? "…" : 0)}
+          subtext="Lifetime sales records"
+        />
+
+        {/* Pending / Active Orders */}
+        <StatCard
+          icon={Clock}
+          label="Active / In Kitchen"
+          value={stats?.pending_orders ?? (loading ? "…" : 0)}
+          subtext="Pending or preparing orders"
+          alert={Boolean(stats?.pending_orders > 0)}
+        />
+      </div>
+
+      {/* Recent Orders Section */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-200/70 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-serif font-bold text-lg text-neutral-900">Recent Orders</h2>
+            <p className="text-xs text-neutral-400">Latest orders placed across counter & delivery</p>
+          </div>
+          <Link
+            to="/orders"
+            className="text-xs font-semibold text-amber-700 hover:text-amber-800 flex items-center gap-1 group"
+          >
+            <span>View All</span>
+            <ArrowRight size={14} className="group-hover:translate-x-0.5 transition" />
+          </Link>
+        </div>
+
+        {/* Table wrapper for mobile scrolling */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs sm:text-sm">
+            <thead className="bg-neutral-50 text-neutral-500 font-semibold border-b border-neutral-200 uppercase text-[11px] tracking-wider">
+              <tr>
+                <th className="py-2.5 px-3">Order #</th>
+                <th className="py-2.5 px-3">Customer</th>
+                <th className="py-2.5 px-3">Type</th>
+                <th className="py-2.5 px-3">Total</th>
+                <th className="py-2.5 px-3">Status</th>
               </tr>
-            ))}
-            {!orders.length && (
-              <tr><td colSpan={4} className="text-center text-neutral-400 py-6">No orders yet.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {orders.map((o) => (
+                <tr key={o.id} className="hover:bg-neutral-50/50 transition">
+                  <td className="py-2.5 px-3 font-mono font-medium text-neutral-900">{o.order_no}</td>
+                  <td className="py-2.5 px-3 font-medium text-neutral-800">{o.customer_name || "Walk-in"}</td>
+                  <td className="py-2.5 px-3 capitalize">
+                    <span className="bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded text-xs">
+                      {o.order_type}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 font-semibold text-neutral-900">
+                    Rs. {Number(o.grand_total).toLocaleString()}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                      statusStyle[o.status] || "bg-neutral-100 text-neutral-700"
+                    }`}>
+                      {o.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {!orders.length && !loading && (
+                <tr>
+                  <td colSpan={5} className="text-center text-neutral-400 py-8">
+                    No orders recorded yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, subtext, icon: Icon, highlight, alert }) {
   return (
-    <div className="bg-white rounded-xl p-5">
-      <div className="text-xs text-neutral-500">{label}</div>
-      <div className="text-2xl font-semibold mt-1">{value}</div>
+    <div className={`rounded-2xl p-5 border transition shadow-sm ${
+      highlight
+        ? "bg-amber-50/50 border-amber-200/80"
+        : alert
+        ? "bg-rose-50/40 border-rose-200/80"
+        : "bg-white border-neutral-200/70"
+    }`}>
+      <div className="flex items-center justify-between text-neutral-500 mb-2">
+        <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
+        {Icon && (
+          <div className={`p-1.5 rounded-lg ${highlight ? "bg-amber-100 text-amber-800" : "bg-neutral-100 text-neutral-600"}`}>
+            <Icon size={16} />
+          </div>
+        )}
+      </div>
+      <div className="text-2xl font-bold text-neutral-900 tracking-tight">{value}</div>
+      {subtext && <div className="text-[11px] text-neutral-400 mt-1">{subtext}</div>}
     </div>
   );
 }
