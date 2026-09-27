@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Search, Trash2, Users, Phone, ShoppingBag, Calendar } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Search, Trash2, Users, Phone, ShoppingBag, Calendar, MessageCircle } from "lucide-react";
 import { getCustomers, deleteCustomer } from "../lib/customers.js";
 
 export default function Customers() {
@@ -30,9 +31,18 @@ export default function Customers() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="font-serif text-2xl sm:text-3xl text-neutral-900">Customers</h1>
-        <p className="text-neutral-500 text-xs sm:text-sm">Client directory, order history frequency and total spend</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-2xl sm:text-3xl text-neutral-900">Customers</h1>
+          <p className="text-neutral-500 text-xs sm:text-sm">Client directory, order history frequency and total spend</p>
+        </div>
+        <Link
+          to="/broadcast"
+          className="self-start sm:self-auto flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm px-4 py-2 rounded-xl shadow-xs transition active:scale-95"
+        >
+          <MessageCircle size={15} />
+          <span>WhatsApp Broadcast</span>
+        </Link>
       </div>
 
       <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-neutral-200/70 space-y-4">

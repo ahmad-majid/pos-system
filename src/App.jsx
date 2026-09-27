@@ -7,6 +7,7 @@ import Products from "./pages/Products.jsx";
 import NewOrder from "./pages/NewOrder.jsx";
 import Orders from "./pages/Orders.jsx";
 import Customers from "./pages/Customers.jsx";
+import WhatsAppBroadcast from "./pages/WhatsAppBroadcast.jsx";
 import Reports from "./pages/Reports.jsx";
 import Settings from "./pages/Settings.jsx";
 
@@ -22,6 +23,7 @@ export default function App() {
       case "/orders": return "Orders";
       case "/products": return "Products";
       case "/customers": return "Customers";
+      case "/broadcast": return "WhatsApp Broadcast";
       case "/reports": return "Reports";
       case "/settings": return "Settings";
       default: return "Ghar Jaisa";
@@ -68,6 +70,7 @@ export default function App() {
           <Route path="/new-order" element={<NewOrder />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/customers" element={<Customers />} />
+          <Route path="/broadcast" element={<WhatsAppBroadcast />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>

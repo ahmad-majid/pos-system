@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Home, PlusCircle, ClipboardList, UtensilsCrossed, Users, BarChart2, Settings, X } from "lucide-react";
+import { Home, PlusCircle, ClipboardList, UtensilsCrossed, Users, MessageCircle, BarChart2, Settings, X } from "lucide-react";
 
 const links = [
   { to: "/", label: "Home", icon: Home, end: true },
@@ -7,6 +7,7 @@ const links = [
   { to: "/orders", label: "Orders", icon: ClipboardList },
   { to: "/products", label: "Products", icon: UtensilsCrossed },
   { to: "/customers", label: "Customers", icon: Users },
+  { to: "/broadcast", label: "WhatsApp Broadcast", icon: MessageCircle },
   { to: "/reports", label: "Reports", icon: BarChart2 },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
